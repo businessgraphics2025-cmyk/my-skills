@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מאסטר שלטים | פתרונות שילוט מקצועיים</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="#hero" class="logo">
+        <span class="logo-icon">▣</span>
+        מאסטר <strong>שלטים</strong>
+      </a>
+      <nav class="nav-links">
+        <a href="#services">שירותים</a>
+        <a href="#gallery">גלריה</a>
+        <a href="#why-us">למה אנחנו</a>
+        <a href="#contact" class="btn-nav">צור קשר</a>
+      </nav>
+      <button class="burger" id="burger" aria-label="תפריט">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#services" class="mobile-link">שירותים</a>
+      <a href="#gallery" class="mobile-link">גלריה</a>
+      <a href="#why-us" class="mobile-link">למה אנחנו</a>
+      <a href="#contact" class="mobile-link">צור קשר</a>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+    </div>
+    <div class="container hero-content">
+      <div class="badge">מעל 15 שנות ניסיון בתחום</div>
+      <h1 class="hero-title">
+        שלטים שמדברים<br />
+        <span class="accent">בשבילך</span>
+      </h1>
+      <p class="hero-sub">
+        עיצוב, ייצור והתקנה של שלטי חוץ ופנים, מסכי LED, שלטי בניין,
+        בנרים, עטיפות רכב ועוד — הכל תחת קורת גג אחת.
+      </p>
+      <div class="hero-cta">
+        <a href="#contact" class="btn-primary">קבל הצעת מחיר חינם</a>
+        <a href="#gallery" class="btn-secondary">לצפייה בעבודות</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">500+</span><span class="stat-label">פרויקטים</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">15+</span><span class="stat-label">שנות ניסיון</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">100%</span><span class="stat-label">שביעות רצון</span></div>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>גלול למטה</span>
+      <div class="scroll-arrow">↓</div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span>שלטי חוץ</span>
+      <span class="dot">•</span>
+      <span>מסכי LED</span>
+      <span class="dot">•</span>
+      <span>שלטי קיר</span>
+      <span class="dot">•</span>
+      <span>בנרים</span>
+      <span class="dot">•</span>
+      <span>עטיפות רכב</span>
+      <span class="dot">•</span>
+      <span>שלטי כניסה</span>
+      <span class="dot">•</span>
+      <span>שלטי תאורה</span>
+      <span class="dot">•</span>
+      <span>פוסטרים</span>
+      <span class="dot">•</span>
+      <span>שלטי חוץ</span>
+      <span class="dot">•</span>
+      <span>מסכי LED</span>
+      <span class="dot">•</span>
+      <span>שלטי קיר</span>
+      <span class="dot">•</span>
+      <span>בנרים</span>
+      <span class="dot">•</span>
+      <span>עטיפות רכב</span>
+      <span class="dot">•</span>
+      <span>שלטי כניסה</span>
+      <span class="dot">•</span>
+      <span>שלטי תאורה</span>
+      <span class="dot">•</span>
+      <span>פוסטרים</span>
+      <span class="dot">•</span>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <section class="services" id="services">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">מה אנחנו עושים</span>
+        <h2 class="section-title">השירותים שלנו</h2>
+        <p class="section-sub">פתרון מלא לכל צורכי השילוט שלך — מהעיצוב ועד ההתקנה</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card" data-index="1">
+          <div class="service-num">01</div>
+          <div class="service-icon">🏢</div>
+          <h3>שלטי חוץ</h3>
+          <p>שלטי בניין, שלטי רחוב, לוחות פרסום — עם חומרים עמידים לכל תנאי מזג האוויר.</p>
+          <a href="#contact" class="service-link">לפרטים ←</a>
+        </div>
+        <div class="service-card" data-index="2">
+          <div class="service-num">02</div>
+          <div class="service-icon">💡</div>
+          <h3>מסכי LED ותאורה</h3>
+          <p>מסכי LED דינמיים, שלטי ניאון, תאורת חלל — נראות שלא עוברת שאף אחד מהצד.</p>
+          <a href="#contact" class="service-link">לפרטים ←</a>
+        </div>
+        <div class="service-card" data-index="3">
+          <div class="service-num">03</div>
+          <div class="service-icon">🖼️</div>
+          <h3>שלטי פנים</h3>
+          <p>שלטי קיר, שלטי כניסה, שילוט למשרדים ולחדרי ישיבות — מקצועי ואסתטי.</p>
+          <a href="#contact" class="service-link">לפרטים ←</a>
+        </div>
+        <div class="service-card" data-index="4">
+          <div class="service-num">04</div>
+          <div class="service-icon">🖨️</div>
+          <h3>הדפסה רחבת פורמט</h3>
+          <p>בנרים, פוסטרים, מדבקות, עטיפות רכב — הדפסה איכותית בכל גודל.</p>
+          <a href="#contact" class="service-link">לפרטים ←</a>
+        </div>
+        <div class="service-card" data-index="5">
+          <div class="service-num">05</div>
+          <div class="service-icon">🎨</div>
+          <h3>עיצוב גרפי</h3>
+          <p>צוות מעצבים מנוסה שיבנה לך זהות ויזואלית חזקה ומותאמת לעסק שלך.</p>
+          <a href="#contact" class="service-link">לפרטים ←</a>
+        </div>
+        <div class="service-card" data-index="6">
+          <div class="service-num">06</div>
+          <div class="service-icon">🔧</div>
+          <h3>התקנה ותחזוקה</h3>
+          <p>צוות התקנה מקצועי שמגיע אליך, מוודא עמידות ומעניק אחריות לכל עבודה.</p>
+          <a href="#contact" class="service-link">לפרטים ←</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="gallery" id="gallery">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">העבודות שלנו</span>
+        <h2 class="section-title">גלריית פרויקטים</h2>
+        <p class="section-sub">כמה דוגמאות מתוך עשרות הפרויקטים שביצענו ברחבי הארץ</p>
+      </div>
+      <div class="gallery-filters">
+        <button class="filter-btn active" data-filter="all">הכל</button>
+        <button class="filter-btn" data-filter="exterior">שלטי חוץ</button>
+        <button class="filter-btn" data-filter="interior">שלטי פנים</button>
+        <button class="filter-btn" data-filter="led">LED</button>
+        <button class="filter-btn" data-filter="print">הדפסה</button>
+      </div>
+      <div class="gallery-grid">
+        <div class="gallery-item large" data-cat="exterior">
+          <div class="gallery-mock" style="background: linear-gradient(135deg, #111 0%, #333 100%);">
+            <div class="mock-sign" style="color:#fff; font-size:2rem; font-weight:800; letter-spacing:2px;">COFFEE<br/><span style="font-size:1rem; font-weight:300; opacity:.7;">ROASTERS</span></div>
+          </div>
+          <div class="gallery-overlay">
+            <span class="gallery-tag">שלטי חוץ</span>
+            <h4>שלט קפה בתל אביב</h4>
+          </div>
+        </div>
+        <div class="gallery-item" data-cat="led">
+          <div class="gallery-mock" style="background: #0a0a0a; position:relative; overflow:hidden;">
+            <div style="position:absolute; inset:0; background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 70%);"></div>
+            <div class="mock-sign" style="color:#fff; font-size:1.4rem; font-weight:800; text-shadow:0 0 20px #fff;">LED<br/>DISPLAY</div>
+          </div>
+          <div class="gallery-overlay">
+            <span class="gallery-tag">LED</span>
+            <h4>מסך LED למרכז קניות</h4>
+          </div>
+        </div>
+        <div class="gallery-item" data-cat="interior">
+          <div class="gallery-mock" style="background: linear-gradient(135deg, #f5f5f5 0%, #ddd 100%);">
+            <div class="mock-sign" style="color:#111; font-size:1.3rem; font-weight:700;">חברה בע"מ<br/><span style="font-size:.8rem; font-weight:400; opacity:.6;">כניסה ראשית</span></div>
+          </div>
+          <div class="gallery-overlay">
+            <span class="gallery-tag">שלטי פנים</span>
+            <h4>שלטי משרד בהרצליה</h4>
+          </div>
+        </div>
+        <div class="gallery-item" data-cat="print">
+          <div class="gallery-mock" style="background: #111;">
+            <div style="width:80px; height:110px; border:2px solid #fff; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.8rem; text-align:center; line-height:1.4;">POSTER<br/>A1</div>
+          </div>
+          <div class="gallery-overlay">
+            <span class="gallery-tag">הדפסה</span>
+            <h4>פוסטרים לאירוע</h4>
+          </div>
+        </div>
+        <div class="gallery-item" data-cat="exterior">
+          <div class="gallery-mock" style="background: linear-gradient(135deg, #222 0%, #444 100%);">
+            <div class="mock-sign" style="color:#fff; font-size:1.5rem; font-weight:900; letter-spacing:4px;">STORE</div>
+          </div>
+          <div class="gallery-overlay">
+            <span class="gallery-tag">שלטי חוץ</span>
+            <h4>שלט חנות ברמת גן</h4>
+          </div>
+        </div>
+        <div class="gallery-item large" data-cat="print">
+          <div class="gallery-mock" style="background: #181818; position:relative;">
+            <div style="position:absolute; inset:0; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px);"></div>
+            <div class="mock-sign" style="color:#fff; font-size:1.2rem; font-weight:700;">עטיפת<br/>רכב מלאה</div>
+          </div>
+          <div class="gallery-overlay">
+            <span class="gallery-tag">הדפסה</span>
+            <h4>עטיפת רכב מלאה</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="why-us" id="why-us">
+    <div class="container why-inner">
+      <div class="why-text">
+        <span class="section-tag">למה מאסטר שלטים</span>
+        <h2 class="section-title">אנחנו לא רק<br/>מדפיסים שלטים</h2>
+        <p class="why-desc">
+          אנחנו בונים מותגים. כל שלט שאנחנו מייצרים הוא שגריר שלך בשטח — ולכן אנחנו מקפידים על כל פרט, מהעיצוב הראשוני ועד הסיכה האחרונה.
+        </p>
+        <div class="why-list">
+          <div class="why-item">
+            <div class="why-check">✓</div>
+            <div>
+              <strong>ייצור בבית</strong>
+              <span>המפעל שלנו — אנחנו שולטים על כל שלב</span>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-check">✓</div>
+            <div>
+              <strong>משלוח והתקנה בכל הארץ</strong>
+              <span>צוות מוסמך שמגיע אליך לכל מקום</span>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-check">✓</div>
+            <div>
+              <strong>אחריות על כל עבודה</strong>
+              <span>אנחנו עומדים מאחורי כל מה שאנחנו מייצרים</span>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-check">✓</div>
+            <div>
+              <strong>מחירים הוגנים, שקיפות מלאה</strong>
+              <span>הצעת מחיר מפורטת ללא הפתעות</span>
+            </div>
+          </div>
+        </div>
+        <a href="#contact" class="btn-primary">בואו נדבר</a>
+      </div>
+      <div class="why-visual">
+        <div class="why-card-stack">
+          <div class="stack-card card-back"></div>
+          <div class="stack-card card-mid"></div>
+          <div class="stack-card card-front">
+            <div class="front-content">
+              <div style="font-size:3rem;">▣</div>
+              <div style="font-size:1.5rem; font-weight:800; margin-top:.5rem;">מאסטר שלטים</div>
+              <div style="font-size:.85rem; opacity:.6; margin-top:.25rem;">Master Signs</div>
+              <div class="front-divider"></div>
+              <div class="front-stats">
+                <div><span>500+</span><small>פרויקטים</small></div>
+                <div><span>15+</span><small>שנים</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">מה אומרים עלינו</span>
+        <h2 class="section-title">הלקוחות מדברים</h2>
+      </div>
+      <div class="testi-grid">
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p>"שירות מדהים מקצה לקצה. השלט שעשו לנו הפך לנקודת עוגן של הרחוב. ממליץ בחום!"</p>
+          <div class="testi-author">
+            <div class="testi-avatar">ד"ר</div>
+            <div>
+              <strong>דני רון</strong>
+              <span>בעל מסעדה, תל אביב</span>
+            </div>
+          </div>
+        </div>
+        <div class="testi-card featured">
+          <div class="testi-stars">★★★★★</div>
+          <p>"עבדנו עם מאסטר שלטים על עטיפת ציי הרכב שלנו — 12 רכבים. העבודה הושלמה בזמן, איכות מושלמת."</p>
+          <div class="testi-author">
+            <div class="testi-avatar">מ"ל</div>
+            <div>
+              <strong>מיכל לוי</strong>
+              <span>מנכ"ל, חברת שירותים</span>
+            </div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p>"הצוות מקצועי, מהיר ויצירתי. העיצוב שיצרו לנו עלה על כל הציפיות שלנו!"</p>
+          <div class="testi-author">
+            <div class="testi-avatar">א"כ</div>
+            <div>
+              <strong>אלי כהן</strong>
+              <span>מנהל שיווק, רשת חנויות</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact" id="contact">
+    <div class="container contact-inner">
+      <div class="contact-info">
+        <span class="section-tag">צור קשר</span>
+        <h2 class="section-title">מוכן להתחיל?</h2>
+        <p>השאר פרטים ונחזור אליך תוך שעות ספורות עם הצעת מחיר מותאמת אישית — ללא עלות וללא התחייבות.</p>
+        <div class="contact-details">
+          <div class="contact-detail">
+            <span class="detail-icon">📞</span>
+            <div>
+              <strong>טלפון</strong>
+              <span>050-000-0000</span>
+            </div>
+          </div>
+          <div class="contact-detail">
+            <span class="detail-icon">📧</span>
+            <div>
+              <strong>אימייל</strong>
+              <span>info@mastersigns.co.il</span>
+            </div>
+          </div>
+          <div class="contact-detail">
+            <span class="detail-icon">📍</span>
+            <div>
+              <strong>כתובת</strong>
+              <span>רחוב המסחר 12, אזור תעשייה</span>
+            </div>
+          </div>
+          <div class="contact-detail">
+            <span class="detail-icon">🕐</span>
+            <div>
+              <strong>שעות פעילות</strong>
+              <span>ראשון-חמישי 8:00–18:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <form class="contact-form" id="contactForm" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">שם מלא *</label>
+            <input type="text" id="name" placeholder="ישראל ישראלי" required />
+          </div>
+          <div class="form-group">
+            <label for="phone">טלפון *</label>
+            <input type="tel" id="phone" placeholder="050-000-0000" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="email">אימייל</label>
+          <input type="email" id="email" placeholder="example@mail.com" />
+        </div>
+        <div class="form-group">
+          <label for="service">סוג השירות</label>
+          <select id="service">
+            <option value="">בחר שירות...</option>
+            <option>שלטי חוץ</option>
+            <option>מסכי LED ותאורה</option>
+            <option>שלטי פנים</option>
+            <option>הדפסה רחבת פורמט</option>
+            <option>עטיפות רכב</option>
+            <option>עיצוב גרפי</option>
+            <option>אחר</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="message">פרטי הפרויקט</label>
+          <textarea id="message" rows="4" placeholder="ספר לנו על הפרויקט שלך..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary full-width" id="submitBtn">
+          שלח הצעת מחיר
+        </button>
+        <div class="form-success" id="formSuccess">
+          ✓ הטופס נשלח בהצלחה! נחזור אליך בהקדם.
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="logo-icon">▣</span>
+        <span>מאסטר <strong>שלטים</strong></span>
+      </div>
+      <div class="footer-links">
+        <a href="#services">שירותים</a>
+        <a href="#gallery">גלריה</a>
+        <a href="#why-us">אודות</a>
+        <a href="#contact">צור קשר</a>
+      </div>
+      <div class="footer-copy">© 2025 מאסטר שלטים. כל הזכויות שמורות.</div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
