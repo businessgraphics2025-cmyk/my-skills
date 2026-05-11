@@ -1,0 +1,530 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0
+// © DreamsFX Strategy — built from the full DreamsFX trading course
+// Entry models: Refined Limit Order (IDM + Extreme OB + FVG) and BOS Entry
+//@version=5
+strategy("DreamsFX Strategy", shorttitle="DFX STRAT", overlay=true,
+     default_qty_type  = strategy.percent_of_equity,
+     default_qty_value = 1,
+     commission_type   = strategy.commission.percent,
+     commission_value  = 0.02,
+     slippage          = 1,
+     max_bars_back     = 500,
+     pyramiding        = 0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  INPUTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+var string GS = "📊 Market Structure"
+i_swing   = input.int(10, "Swing Length", group=GS, minval=3, maxval=50)
+
+var string GR = "⚙️ Risk Management"
+i_sl_type = input.string("ATR",   "SL Type",          group=GR,
+     options=["ATR", "Fixed Pips", "OB Zone"])
+i_atr_sl  = input.float(1.5,      "ATR SL Multiplier",group=GR, minval=0.5, step=0.1)
+i_sl_pips = input.float(7.0,      "Fixed SL (pips)",  group=GR, minval=1.0, step=0.5)
+i_tp1_rr  = input.float(1.5,      "TP1 R:R",          group=GR, minval=0.5, step=0.1)
+i_tp2_rr  = input.float(3.0,      "TP2 R:R",          group=GR, minval=1.0, step=0.5)
+i_tp1_pct = input.int  (50,       "% Close at TP1",   group=GR, minval=10, maxval=100)
+
+var string GF2 = "🔍 Trade Filters"
+i_sess_filter = input.bool(true,  "Session Filter (London/NY only)", group=GF2)
+i_entry_model = input.string("Both", "Entry Model", group=GF2,
+     options=["Refined Limit Order", "BOS Entry", "Both"])
+
+var string GO = "📦 Order Block Config"
+i_ob_ext  = input.int(40,  "OB Extend (bars)",    group=GO, minval=5)
+i_eng_m   = input.float(2.0,"ENG LQD: Impulse Mult.", group=GO, minval=1.2, step=0.1)
+
+var string GX = "🕐 Sessions"
+i_asia    = input.bool(true,  "Show Asia Box",    group=GX)
+i_london  = input.bool(true,  "Show London Box",  group=GX)
+i_ny_kz   = input.bool(true,  "Show NY KZ Box",   group=GX)
+i_asia_hl = input.bool(true,  "Asia H/L/Mid",     group=GX)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  COLORS
+// ══════════════════════════════════════════════════════════════════════════════
+C_bos_b   = #00E5FF
+C_bos_s   = #FF3D00
+C_choch_b = #69F0AE
+C_choch_s = #FFD740
+C_ext_bf  = color.new(#1565C0, 75)
+C_ext_bb  = color.new(#1565C0,  0)
+C_ext_sf  = color.new(#B71C1C, 75)
+C_ext_sb  = color.new(#B71C1C,  0)
+C_fvg_bf  = color.new(#004D40, 82)
+C_fvg_bb  = color.new(#00BFA5,  0)
+C_fvg_sf  = color.new(#4E342E, 82)
+C_fvg_sb  = color.new(#D84315,  0)
+C_idm     = color.new(#CE93D8,  0)
+C_smt     = color.new(#FF9100,  0)
+C_eng     = color.new(#00E5FF,  0)
+C_eng_fill= color.new(#00E5FF, 88)
+C_asia_bg = color.new(#3949AB, 92)
+C_lon_bg  = color.new(#2E7D32, 92)
+C_ny_bg   = color.new(#C62828, 92)
+C_buy     = color.new(#00E676,  0)
+C_sell    = color.new(#FF1744,  0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  PIVOT DETECTION
+// ══════════════════════════════════════════════════════════════════════════════
+_ph = ta.pivothigh(high, i_swing, i_swing)
+_pl = ta.pivotlow (low,  i_swing, i_swing)
+
+ph_bar_idx = bar_index - i_swing
+pl_bar_idx = bar_index - i_swing
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  MARKET STRUCTURE TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+var float sh1   = na;  var float sh2 = na
+var int   sh1_i = na;  var int   sh2_i = na
+var float sl1   = na;  var float sl2 = na
+var int   sl1_i = na;  var int   sl2_i = na
+
+var bool  bull_ms  = true
+var float last_bph = na
+var float last_bpl = na
+
+if not na(_ph)
+    sh2 := sh1;  sh2_i := sh1_i
+    sh1 := _ph;  sh1_i := ph_bar_idx
+
+if not na(_pl)
+    sl2 := sl1;  sl2_i := sl1_i
+    sl1 := _pl;  sl1_i := pl_bar_idx
+
+b_bull = not na(sh1) and close > sh1 and sh1 != last_bph
+b_bear = not na(sl1) and close < sl1 and sl1 != last_bpl
+
+bos_bull   = bull_ms      and b_bull
+bos_bear   = not bull_ms  and b_bear
+choch_bull = not bull_ms  and b_bull
+choch_bear = bull_ms      and b_bear
+
+if b_bull
+    last_bph := sh1
+if b_bear
+    last_bpl := sl1
+if choch_bull
+    bull_ms := true
+if choch_bear
+    bull_ms := false
+
+// Structure lines
+if bos_bull
+    label.new(bar_index, low, "C-BOS ▲", style=label.style_label_up,
+         color=color.new(C_bos_b, 80), textcolor=C_bos_b, size=size.small)
+    line.new(sh1_i, sh1, bar_index, sh1,
+         color=color.new(C_bos_b, 40), style=line.style_dashed, width=1)
+
+if bos_bear
+    label.new(bar_index, high, "C-BOS ▼", style=label.style_label_down,
+         color=color.new(C_bos_s, 80), textcolor=C_bos_s, size=size.small)
+    line.new(sl1_i, sl1, bar_index, sl1,
+         color=color.new(C_bos_s, 40), style=line.style_dashed, width=1)
+
+if choch_bull
+    label.new(bar_index, low, "CHoCH ▲", style=label.style_label_up,
+         color=color.new(C_choch_b, 80), textcolor=C_choch_b, size=size.small)
+if choch_bear
+    label.new(bar_index, high, "CHoCH ▼", style=label.style_label_down,
+         color=color.new(C_choch_s, 80), textcolor=C_choch_s, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  ORDER BLOCKS
+// ══════════════════════════════════════════════════════════════════════════════
+// Track last bearish candle → potential bullish Extreme OB
+var float lb_h = na;  var float lb_l = na;  var int lb_i = na
+// Track last bullish candle → potential bearish Extreme OB
+var float ls_h = na;  var float ls_l = na;  var int ls_i = na
+
+// Current Extreme OB zone (active for entry proximity check)
+var float ext_ob_bull_h = na;  var float ext_ob_bull_l = na
+var float ext_ob_bear_h = na;  var float ext_ob_bear_l = na
+
+if close < open
+    lb_h := high;  lb_l := low;  lb_i := bar_index
+if close > open
+    ls_h := high;  ls_l := low;  ls_i := bar_index
+
+if (bos_bull or choch_bull) and not na(lb_i)
+    ext_ob_bull_h := lb_h;  ext_ob_bull_l := lb_l
+    box.new(lb_i, lb_h, lb_i + i_ob_ext, lb_l,
+         border_color=C_ext_bb, bgcolor=C_ext_bf, border_width=1)
+    label.new(lb_i, lb_h, "EXT OB+", style=label.style_label_down, size=size.tiny,
+         color=color.new(#1565C0, 80), textcolor=#82B1FF)
+
+if (bos_bear or choch_bear) and not na(ls_i)
+    ext_ob_bear_h := ls_h;  ext_ob_bear_l := ls_l
+    box.new(ls_i, ls_h, ls_i + i_ob_ext, ls_l,
+         border_color=C_ext_sb, bgcolor=C_ext_sf, border_width=1)
+    label.new(ls_i, ls_l, "EXT OB-", style=label.style_label_up, size=size.tiny,
+         color=color.new(#B71C1C, 80), textcolor=#FF8A80)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  FVG  (Fair Value Gap)
+// ══════════════════════════════════════════════════════════════════════════════
+bull_fvg = low  > high[2]
+bear_fvg = high < low[2]
+
+if bull_fvg
+    box.new(bar_index - 2, low, bar_index + 30, high[2],
+         border_color=C_fvg_bb, bgcolor=C_fvg_bf, border_width=1)
+if bear_fvg
+    box.new(bar_index - 2, low[2], bar_index + 30, high,
+         border_color=C_fvg_sb, bgcolor=C_fvg_sf, border_width=1)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  IDM  (Inducement)
+// ══════════════════════════════════════════════════════════════════════════════
+idm_bear_raw = not na(sh1) and high > sh1 and close < sh1
+idm_bull_raw = not na(sl1) and low  < sl1 and close > sl1
+
+var bool idm_bear_prev = false
+var bool idm_bull_prev = false
+
+idm_bear = idm_bear_raw and not idm_bear_prev
+idm_bull = idm_bull_raw and not idm_bull_prev
+
+idm_bear_prev := idm_bear_raw
+idm_bull_prev := idm_bull_raw
+
+var bool  idm_b_active = false;  var bool  idm_s_active = false
+var int   idm_b_bar    = na;     var int   idm_s_bar    = na
+var float idm_s_level  = na;     var float idm_b_level  = na
+
+if idm_bear
+    idm_s_active := true;  idm_b_active := false
+    idm_s_bar    := bar_index;  idm_s_level := sh1
+    label.new(bar_index, high, "IDM ▼",
+         style=label.style_label_down, size=size.small,
+         color=color.new(C_idm, 70), textcolor=C_idm)
+
+if idm_bull
+    idm_b_active := true;  idm_s_active := false
+    idm_b_bar    := bar_index;  idm_b_level := sl1
+    label.new(bar_index, low, "IDM ▲",
+         style=label.style_label_up, size=size.small,
+         color=color.new(C_idm, 70), textcolor=C_idm)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  SMART MONEY TRAPS  (SMT)
+// ══════════════════════════════════════════════════════════════════════════════
+smt_bear = idm_s_active and not na(_ph) and not na(idm_s_level) and
+     _ph < idm_s_level and (bar_index - idm_s_bar) <= 30
+
+smt_bull = idm_b_active and not na(_pl) and not na(idm_b_level) and
+     _pl > idm_b_level and (bar_index - idm_b_bar) <= 30
+
+if smt_bear
+    label.new(bar_index - i_swing, high[i_swing], "SMT ▼  ⚠",
+         style=label.style_label_down, size=size.small,
+         color=color.new(C_smt, 65), textcolor=C_smt)
+    idm_s_active := false
+
+if smt_bull
+    label.new(bar_index - i_swing, low[i_swing], "SMT ▲  ⚠",
+         style=label.style_label_up, size=size.small,
+         color=color.new(C_smt, 65), textcolor=C_smt)
+    idm_b_active := false
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  ENGINEERED LIQUIDITY  (ENG LQD)
+// ══════════════════════════════════════════════════════════════════════════════
+candle_body = math.abs(close - open)
+avg_body    = ta.sma(math.abs(close[1] - open[1]), 20)
+is_impulse  = candle_body >= avg_body * i_eng_m
+
+eng_bull = bull_fvg and is_impulse
+eng_bear = bear_fvg and is_impulse
+
+if eng_bull
+    box.new(bar_index - 2, low, bar_index + 50, high[2],
+         border_color=C_eng, bgcolor=C_eng_fill,
+         border_width=2, border_style=line.style_dotted)
+    label.new(bar_index, low, "⚡ ENG LQD  WALL",
+         style=label.style_label_right, size=size.small,
+         color=color.new(C_eng, 65), textcolor=C_eng)
+
+if eng_bear
+    box.new(bar_index - 2, low[2], bar_index + 50, high,
+         border_color=C_eng, bgcolor=C_eng_fill,
+         border_width=2, border_style=line.style_dotted)
+    label.new(bar_index, high, "⚡ ENG LQD  WALL",
+         style=label.style_label_right, size=size.small,
+         color=color.new(C_eng, 65), textcolor=C_eng)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  SESSIONS
+// ══════════════════════════════════════════════════════════════════════════════
+h_utc  = hour(time, "UTC")
+m_utc  = minute(time, "UTC")
+h_mins = h_utc * 60 + m_utc
+
+in_asia   = h_mins >= 1200 or h_mins < 120
+in_london = h_mins >= 420  and h_mins < 960
+in_ny_kz  = h_mins >= 810  and h_mins < 900
+in_active = in_london or in_ny_kz               // prime trading sessions
+
+bgcolor(i_asia   and in_asia   ? C_asia_bg : na, title="Asia Session")
+bgcolor(i_london and in_london ? C_lon_bg  : na, title="London Session")
+bgcolor(i_ny_kz  and in_ny_kz  ? C_ny_bg  : na, title="NY Kill Zone")
+
+// Asia H/L/Mid
+var float a_high     = na;  var float a_low  = na
+var bool  track_asia = false;  var int a_s_bar = na
+
+if in_asia and not in_asia[1]
+    a_high := high;  a_low := low
+    track_asia := true;  a_s_bar := bar_index
+
+if track_asia and in_asia
+    a_high := math.max(a_high, high)
+    a_low  := math.min(a_low,  low)
+
+if not in_asia and in_asia[1] and track_asia
+    track_asia := false
+    if i_asia_hl
+        a_mid = (a_high + a_low) * 0.5
+        line.new(a_s_bar, a_high, bar_index + 80, a_high,
+             color=color.new(#7986CB, 0), style=line.style_dashed, width=1)
+        line.new(a_s_bar, a_low, bar_index + 80, a_low,
+             color=color.new(#7986CB, 0), style=line.style_dashed, width=1)
+        line.new(a_s_bar, a_mid, bar_index + 80, a_mid,
+             color=color.new(#7986CB, 50), style=line.style_dotted, width=1)
+        label.new(bar_index + 3, a_high, "ASIA H",
+             style=label.style_label_left, size=size.tiny,
+             color=color.new(#3949AB, 85), textcolor=#9FA8DA)
+        label.new(bar_index + 3, a_low, "ASIA L",
+             style=label.style_label_left, size=size.tiny,
+             color=color.new(#3949AB, 85), textcolor=#9FA8DA)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  ENTRY LOGIC
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Entry Model 1: Refined Limit Order ───────────────────────────────────────
+// Conditions: bull_ms + IDM (swing low swept) + OB proximity + FVG alignment
+// SL: just below the extreme OB low  |  TP1: 1:1.5  |  TP2: 1:3
+
+near_bull_ob = not na(ext_ob_bull_l) and not na(ext_ob_bull_h) and
+     close >= ext_ob_bull_l and close <= ext_ob_bull_h * 1.002
+
+near_bear_ob = not na(ext_ob_bear_h) and not na(ext_ob_bear_l) and
+     close <= ext_ob_bear_h and close >= ext_ob_bear_l * 0.998
+
+sess_ok = not i_sess_filter or in_active
+
+rlo_buy  = sess_ok and bull_ms and idm_b_active and bull_fvg and near_bull_ob and
+     (i_entry_model == "Refined Limit Order" or i_entry_model == "Both")
+
+rlo_sell = sess_ok and not bull_ms and idm_s_active and bear_fvg and near_bear_ob and
+     (i_entry_model == "Refined Limit Order" or i_entry_model == "Both")
+
+// ── Entry Model 2: BOS Entry ─────────────────────────────────────────────────
+// Conditions: CHoCH occurs (structural shift) + IDM before it + ENG LQD or FVG
+// This model enters ON THE BOS BAR after a CHoCH confirms new direction
+
+bos_buy  = sess_ok and choch_bull and idm_b_active and (bull_fvg or eng_bull) and
+     (i_entry_model == "BOS Entry" or i_entry_model == "Both")
+
+bos_sell = sess_ok and choch_bear and idm_s_active and (bear_fvg or eng_bear) and
+     (i_entry_model == "BOS Entry" or i_entry_model == "Both")
+
+buy_signal  = rlo_buy  or bos_buy
+sell_signal = rlo_sell or bos_sell
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  STOP LOSS CALCULATION
+// ══════════════════════════════════════════════════════════════════════════════
+atr14 = ta.atr(14)
+pip   = syminfo.mintick * (syminfo.type == "forex" ? 10 : 1)
+
+f_sl_long(ob_low) =>
+    if i_sl_type == "ATR"
+        close - atr14 * i_atr_sl
+    else if i_sl_type == "Fixed Pips"
+        close - i_sl_pips * pip
+    else  // OB Zone: SL just below OB low
+        ob_low - atr14 * 0.3
+
+f_sl_short(ob_high) =>
+    if i_sl_type == "ATR"
+        close + atr14 * i_atr_sl
+    else if i_sl_type == "Fixed Pips"
+        close + i_sl_pips * pip
+    else  // OB Zone: SL just above OB high
+        ob_high + atr14 * 0.3
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  STRATEGY EXECUTION
+// ══════════════════════════════════════════════════════════════════════════════
+var float entry_sl_long  = na
+var float entry_tp1_long = na
+var float entry_tp2_long = na
+var float entry_sl_short = na
+var float entry_tp1_short= na
+var float entry_tp2_short= na
+
+// ─ LONG ENTRY ─────────────────────────────────────────────────────────────────
+if buy_signal and strategy.position_size == 0
+    sl_price  = f_sl_long(ext_ob_bull_l)
+    risk      = close - sl_price
+    tp1_price = close + risk * i_tp1_rr
+    tp2_price = close + risk * i_tp2_rr
+
+    entry_sl_long   := sl_price
+    entry_tp1_long  := tp1_price
+    entry_tp2_long  := tp2_price
+
+    strategy.entry("LONG", strategy.long)
+    strategy.exit ("LONG_TP1", "LONG",
+         limit = tp1_price,
+         stop  = sl_price,
+         qty_percent = i_tp1_pct,
+         comment="TP1")
+    strategy.exit ("LONG_TP2", "LONG",
+         limit = tp2_price,
+         stop  = sl_price,
+         comment="TP2")
+
+    // Entry marker
+    entry_type = rlo_buy ? "RLO" : "BOS"
+    label.new(bar_index, low,
+         "🟢 LONG\n" + entry_type + "\nSL " + str.tostring(sl_price, format.mintick) +
+         "\nTP1 " + str.tostring(tp1_price, format.mintick),
+         style=label.style_label_up, size=size.small,
+         color=color.new(C_buy, 55), textcolor=color.white)
+    line.new(bar_index, sl_price,  bar_index + 20, sl_price,
+         color=color.new(color.red, 20),   style=line.style_solid, width=1)
+    line.new(bar_index, tp1_price, bar_index + 20, tp1_price,
+         color=color.new(color.green, 20), style=line.style_solid, width=1)
+    line.new(bar_index, tp2_price, bar_index + 20, tp2_price,
+         color=color.new(color.green, 40), style=line.style_dashed, width=1)
+
+    idm_b_active := false
+
+// ─ SHORT ENTRY ────────────────────────────────────────────────────────────────
+if sell_signal and strategy.position_size == 0
+    sl_price  = f_sl_short(ext_ob_bear_h)
+    risk      = sl_price - close
+    tp1_price = close - risk * i_tp1_rr
+    tp2_price = close - risk * i_tp2_rr
+
+    entry_sl_short    := sl_price
+    entry_tp1_short   := tp1_price
+    entry_tp2_short   := tp2_price
+
+    strategy.entry("SHORT", strategy.short)
+    strategy.exit ("SHORT_TP1", "SHORT",
+         limit = tp1_price,
+         stop  = sl_price,
+         qty_percent = i_tp1_pct,
+         comment="TP1")
+    strategy.exit ("SHORT_TP2", "SHORT",
+         limit = tp2_price,
+         stop  = sl_price,
+         comment="TP2")
+
+    entry_type = rlo_sell ? "RLO" : "BOS"
+    label.new(bar_index, high,
+         "🔴 SHORT\n" + entry_type + "\nSL " + str.tostring(sl_price, format.mintick) +
+         "\nTP1 " + str.tostring(tp1_price, format.mintick),
+         style=label.style_label_down, size=size.small,
+         color=color.new(C_sell, 55), textcolor=color.white)
+    line.new(bar_index, sl_price,  bar_index + 20, sl_price,
+         color=color.new(color.red, 20),   style=line.style_solid, width=1)
+    line.new(bar_index, tp1_price, bar_index + 20, tp1_price,
+         color=color.new(color.green, 20), style=line.style_solid, width=1)
+    line.new(bar_index, tp2_price, bar_index + 20, tp2_price,
+         color=color.new(color.green, 40), style=line.style_dashed, width=1)
+
+    idm_s_active := false
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════════
+var table db = table.new(position.top_right, 2, 12,
+     bgcolor      = color.new(color.black, 72),
+     border_color = color.new(color.white, 65),
+     border_width = 1,
+     frame_color  = color.new(color.white, 50),
+     frame_width  = 1)
+
+sess_str = in_ny_kz ? "🗽 NY Kill Zone" : in_london ? "🌍 London" :
+     in_asia ? "🌙 Asia" : "⏸ Off-Hours"
+
+pos_str  = strategy.position_size > 0 ? "🟢 LONG" :
+     strategy.position_size < 0 ? "🔴 SHORT" : "Flat"
+pos_col  = strategy.position_size > 0 ? C_buy :
+     strategy.position_size < 0 ? C_sell : color.gray
+
+net_pnl  = strategy.netprofit
+win_rate = strategy.wintrades + strategy.losstrades > 0 ?
+     str.tostring(math.round(strategy.wintrades /
+     (strategy.wintrades + strategy.losstrades) * 100), "##") + "%" : "—"
+
+if barstate.islast
+    table.cell(db, 0, 0, "DreamsFX STRATEGY",
+         bgcolor=color.new(#1A237E, 45), text_color=color.white,
+         text_size=size.small, text_halign=text.align_center)
+    table.cell(db, 1, 0, "Pine v5",
+         bgcolor=color.new(#1A237E, 45), text_color=color.new(color.white, 40),
+         text_size=size.small, text_halign=text.align_center)
+
+    table.cell(db, 0, 1, "Trend",      text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 1, bull_ms ? "BULLISH ▲" : "BEARISH ▼",
+         text_color=bull_ms ? C_bos_b : C_bos_s, text_size=size.tiny)
+
+    table.cell(db, 0, 2, "Session",    text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 2, sess_str,     text_color=color.white, text_size=size.tiny)
+
+    table.cell(db, 0, 3, "Position",   text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 3, pos_str,      text_color=pos_col, text_size=size.tiny)
+
+    table.cell(db, 0, 4, "Model",      text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 4, i_entry_model,text_color=color.white, text_size=size.tiny)
+
+    table.cell(db, 0, 5, "SL Type",    text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 5, i_sl_type,    text_color=color.gray, text_size=size.tiny)
+
+    table.cell(db, 0, 6, "TP1 R:R",   text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 6, str.tostring(i_tp1_rr, "0.0"),
+         text_color=#69F0AE, text_size=size.tiny)
+
+    table.cell(db, 0, 7, "TP2 R:R",   text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 7, str.tostring(i_tp2_rr, "0.0"),
+         text_color=#69F0AE, text_size=size.tiny)
+
+    table.cell(db, 0, 8, "Net P&L",   text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 8,
+         str.tostring(net_pnl, format.mintick),
+         text_color=net_pnl >= 0 ? C_buy : C_sell, text_size=size.tiny)
+
+    table.cell(db, 0,  9, "Win Rate",  text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1,  9, win_rate,    text_color=color.white, text_size=size.tiny)
+
+    table.cell(db, 0, 10, "Trades",    text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 10,
+         str.tostring(strategy.closedtrades),
+         text_color=color.gray, text_size=size.tiny)
+
+    table.cell(db, 0, 11, "IDM",       text_color=color.new(color.white, 30), text_size=size.tiny)
+    table.cell(db, 1, 11,
+         idm_s_active ? "BEAR IDM" : idm_b_active ? "BULL IDM" : "—",
+         text_color=idm_s_active ? C_bos_s : idm_b_active ? C_bos_b : color.gray,
+         text_size=size.tiny)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ██  ALERT CONDITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+alertcondition(buy_signal,  "DFX LONG Entry",  "DFX Strategy: 🟢 LONG — IDM + OB + FVG")
+alertcondition(sell_signal, "DFX SHORT Entry", "DFX Strategy: 🔴 SHORT — IDM + OB + FVG")
+alertcondition(bos_bull,    "DFX BOS Bullish", "DFX: C-BOS ▲ continuation")
+alertcondition(bos_bear,    "DFX BOS Bearish", "DFX: C-BOS ▼ continuation")
+alertcondition(choch_bull,  "DFX CHoCH Bull",  "DFX: CHoCH ▲ — reversal to bullish")
+alertcondition(choch_bear,  "DFX CHoCH Bear",  "DFX: CHoCH ▼ — reversal to bearish")
+alertcondition(idm_bull,    "DFX IDM Bull",    "DFX: IDM ▲ — low swept")
+alertcondition(idm_bear,    "DFX IDM Bear",    "DFX: IDM ▼ — high swept")
