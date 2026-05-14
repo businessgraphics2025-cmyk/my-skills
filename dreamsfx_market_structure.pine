@@ -1,156 +1,135 @@
 // This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0
 // © DreamsFX Market Structure Indicator — built from the full DreamsFX trading course
-//@version=5
+//@version=6
 indicator("DreamsFX Market Structure", shorttitle="DFX MSI", overlay=true,
-     max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500)
+     max_labels_count=500, max_lines_count=500, max_boxes_count=500)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  INPUTS
 // ══════════════════════════════════════════════════════════════════════════════
-
-// ── Market Structure ──────────────────────────────────────────────────────────
 var string GS = "📊 Market Structure"
-i_swing   = input.int (10,    "Swing Length",           group=GS, minval=3, maxval=50)
-i_bos     = input.bool(true,  "Show BOS Labels",        group=GS)
-i_choch   = input.bool(true,  "Show CHoCH Labels",      group=GS)
-i_sl      = input.bool(true,  "Show Structure Lines",   group=GS)
+i_swing  = input.int(10,    "Swing Length",         group=GS, minval=3, maxval=50)
+i_bos    = input.bool(true, "Show BOS Labels",      group=GS)
+i_choch  = input.bool(true, "Show CHoCH Labels",    group=GS)
+i_sl     = input.bool(true, "Show Structure Lines", group=GS)
 
-// ── Order Blocks ──────────────────────────────────────────────────────────────
 var string GO = "📦 Order Blocks"
-i_ext_ob  = input.bool(true,  "Extreme OBs",            group=GO)
-i_dec_ob  = input.bool(true,  "Decisional OBs",         group=GO)
-i_poi     = input.bool(true,  "HTF POI Lines",          group=GO)
-i_htf     = input.timeframe("60", "HTF Timeframe",      group=GO)
-i_ob_ext  = input.int (40,    "OB Extend (bars)",       group=GO, minval=5)
+i_ext_ob = input.bool(true,   "Extreme OBs",       group=GO)
+i_dec_ob = input.bool(true,   "Decisional OBs",    group=GO)
+i_poi    = input.bool(true,   "HTF POI Lines",     group=GO)
+i_htf    = input.timeframe("60", "HTF Timeframe",  group=GO)
+i_ob_ext = input.int(40,      "OB Extend (bars)",  group=GO, minval=5)
 
-// ── FVG / Imbalance ───────────────────────────────────────────────────────────
 var string GF = "⚡ FVG / Imbalance"
-i_fvg     = input.bool(true,  "Show FVG Zones",         group=GF)
-i_fvg_ext = input.int (30,    "FVG Extend (bars)",      group=GF, minval=5)
+i_fvg     = input.bool(true, "Show FVG Zones",    group=GF)
+i_fvg_ext = input.int(30,    "FVG Extend (bars)", group=GF, minval=5)
 
-// ── Liquidity ─────────────────────────────────────────────────────────────────
 var string GL = "💧 Liquidity"
-i_eqhl    = input.bool(true,  "EQH / EQL",              group=GL)
-i_eq_pct  = input.float(0.1,  "EQ Zone Threshold %",    group=GL, minval=0.01, step=0.01)
-i_eq_ext  = input.int (30,    "EQH/EQL Extend (bars)",  group=GL, minval=5)
+i_eqhl   = input.bool(true,  "EQH / EQL",              group=GL)
+i_eq_pct = input.float(0.1,  "EQ Zone Threshold %",    group=GL, minval=0.01, step=0.01)
+i_eq_ext = input.int(30,     "EQH/EQL Extend (bars)",  group=GL, minval=5)
 
-// ── IDM / SMT / ENG LQD ──────────────────────────────────────────────────────
 var string GI = "🎯 IDM / SMT / ENG LQD"
-i_idm     = input.bool(true,  "Show Inducement (IDM)",  group=GI)
-i_smt     = input.bool(true,  "Show SMT Traps",         group=GI)
-i_eng     = input.bool(true,  "Show ENG LQD Zones",     group=GI)
-i_eng_m   = input.float(2.0,  "ENG LQD: Impulse Mult.", group=GI, minval=1.2, step=0.1)
+i_idm   = input.bool(true,  "Show Inducement (IDM)", group=GI)
+i_smt   = input.bool(true,  "Show SMT Traps",        group=GI)
+i_eng   = input.bool(true,  "Show ENG LQD Zones",    group=GI)
+i_eng_m = input.float(2.0,  "ENG LQD: Impulse Mult.",group=GI, minval=1.2, step=0.1)
 
-// ── Sessions ──────────────────────────────────────────────────────────────────
 var string GX = "🕐 Sessions"
-i_asia    = input.bool(true,  "Asia Session Box",        group=GX)
-i_london  = input.bool(true,  "London Session Box",      group=GX)
-i_ny_kz   = input.bool(true,  "NY Kill Zone Box",        group=GX)
-i_asia_hl = input.bool(true,  "Asia H / L / Mid Lines",  group=GX)
+i_asia    = input.bool(true, "Asia Session Box",       group=GX)
+i_london  = input.bool(true, "London Session Box",     group=GX)
+i_ny_kz   = input.bool(true, "NY Kill Zone Box",       group=GX)
+i_asia_hl = input.bool(true, "Asia H / L / Mid Lines", group=GX)
 
-// ── Entry Signals ────────────────────────────────────────────────────────────
 var string GE = "🔔 Entry Signals"
-i_entry   = input.bool(true,  "Show Entry Signals",      group=GE)
+i_entry = input.bool(true, "Show Entry Signals", group=GE)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  COLORS
 // ══════════════════════════════════════════════════════════════════════════════
-// Structure
-C_bos_b    = #00E5FF
-C_bos_s    = #FF3D00
-C_choch_b  = #69F0AE
-C_choch_s  = #FFD740
+C_bos_b   = #00E5FF
+C_bos_s   = #FF3D00
+C_choch_b = #69F0AE
+C_choch_s = #FFD740
 
-// Extreme Order Blocks
-C_ext_bf   = color.new(#1565C0, 75)
-C_ext_bb   = color.new(#1565C0,  0)
-C_ext_sf   = color.new(#B71C1C, 75)
-C_ext_sb   = color.new(#B71C1C,  0)
+C_ext_bf  = color.new(#1565C0, 75)
+C_ext_bb  = color.new(#1565C0,  0)
+C_ext_sf  = color.new(#B71C1C, 75)
+C_ext_sb  = color.new(#B71C1C,  0)
 
-// Decisional Order Blocks
-C_dec_bf   = color.new(#0277BD, 82)
-C_dec_bb   = color.new(#0277BD,  0)
-C_dec_sf   = color.new(#BF360C, 82)
-C_dec_sb   = color.new(#BF360C,  0)
+C_dec_bf  = color.new(#0277BD, 82)
+C_dec_bb  = color.new(#0277BD,  0)
+C_dec_sf  = color.new(#BF360C, 82)
+C_dec_sb  = color.new(#BF360C,  0)
 
-// FVG
-C_fvg_bf   = color.new(#004D40, 82)
-C_fvg_bb   = color.new(#00BFA5,  0)
-C_fvg_sf   = color.new(#4E342E, 82)
-C_fvg_sb   = color.new(#D84315,  0)
+C_fvg_bf  = color.new(#004D40, 82)
+C_fvg_bb  = color.new(#00BFA5,  0)
+C_fvg_sf  = color.new(#4E342E, 82)
+C_fvg_sb  = color.new(#D84315,  0)
 
-// Liquidity
-C_eqh      = color.new(#FFC400,  0)
-C_eql      = color.new(#FFC400,  0)
+C_eqh     = color.new(#FFC400, 0)
+C_eql     = color.new(#FFC400, 0)
 
-// IDM / SMT / ENG LQD
-C_idm      = color.new(#CE93D8,  0)
-C_smt      = color.new(#FF9100,  0)
-C_eng      = color.new(#00E5FF,  0)
-C_eng_fill = color.new(#00E5FF, 88)
+C_idm     = color.new(#CE93D8, 0)
+C_smt     = color.new(#FF9100, 0)
+C_eng     = color.new(#00E5FF, 0)
+C_eng_fill= color.new(#00E5FF, 88)
 
-// Sessions
-C_asia_bg  = color.new(#3949AB, 92)
-C_lon_bg   = color.new(#2E7D32, 92)
-C_ny_bg    = color.new(#C62828, 92)
+C_asia_bg = color.new(#3949AB, 92)
+C_lon_bg  = color.new(#2E7D32, 92)
+C_ny_bg   = color.new(#C62828, 92)
 
-// Entry
-C_buy      = color.new(#00E676,  0)
-C_sell     = color.new(#FF1744,  0)
+C_buy     = color.new(#00E676, 0)
+C_sell    = color.new(#FF1744, 0)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  PIVOT DETECTION
 // ══════════════════════════════════════════════════════════════════════════════
 _ph = ta.pivothigh(high, i_swing, i_swing)
-_pl = ta.pivotlow (low,  i_swing, i_swing)
+_pl = ta.pivotlow(low,   i_swing, i_swing)
 
-// Confirmed pivot bar indices (pivots confirmed i_swing bars later)
 ph_bar_idx = bar_index - i_swing
 pl_bar_idx = bar_index - i_swing
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  MARKET STRUCTURE TRACKING
 // ══════════════════════════════════════════════════════════════════════════════
-var float sh1    = na   // most recent swing high
-var float sh2    = na   // previous swing high
-var int   sh1_i  = na   // bar index of sh1
+var float sh1    = na
+var float sh2    = na
+var int   sh1_i  = na
 var int   sh2_i  = na
-
-var float sl1    = na   // most recent swing low
-var float sl2    = na   // previous swing low
+var float sl1    = na
+var float sl2    = na
 var int   sl1_i  = na
 var int   sl2_i  = na
+var bool  bull_ms  = true
+var float last_bph = na
+var float last_bpl = na
 
-var bool  bull_ms       = true  // current market structure bias
-var float last_bph      = na    // last broken pivot high (prevents re-trigger)
-var float last_bpl      = na    // last broken pivot low
-
-// Update swing tracking on new pivots
 if not na(_ph)
-    sh2 := sh1;  sh2_i := sh1_i
-    sh1 := _ph;  sh1_i := ph_bar_idx
+    sh2   := sh1
+    sh2_i := sh1_i
+    sh1   := _ph
+    sh1_i := ph_bar_idx
 
 if not na(_pl)
-    sl2 := sl1;  sl2_i := sl1_i
-    sl1 := _pl;  sl1_i := pl_bar_idx
+    sl2   := sl1
+    sl2_i := sl1_i
+    sl1   := _pl
+    sl1_i := pl_bar_idx
 
-// Detect first close above/below structural level
-b_bull = not na(sh1) and close > sh1 and sh1 != last_bph   // bullish break
-b_bear = not na(sl1) and close < sl1 and sl1 != last_bpl   // bearish break
+b_bull = not na(sh1) and close > sh1 and sh1 != last_bph
+b_bear = not na(sl1) and close < sl1 and sl1 != last_bpl
 
-// Classify break as BOS (continuation) or CHoCH (reversal)
-bos_bull   = bull_ms  and b_bull
+bos_bull   = bull_ms     and b_bull
 bos_bear   = not bull_ms and b_bear
 choch_bull = not bull_ms and b_bull
-choch_bear = bull_ms  and b_bear
+choch_bear = bull_ms     and b_bear
 
-// Mark level as broken so it doesn't re-trigger
 if b_bull
     last_bph := sh1
 if b_bear
     last_bpl := sl1
-
-// Flip trend bias on CHoCH
 if choch_bull
     bull_ms := true
 if choch_bear
@@ -189,28 +168,29 @@ if i_choch and choch_bear
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  ORDER BLOCKS
 // ══════════════════════════════════════════════════════════════════════════════
-// Extreme OB: the LAST candle of the opposite colour in the leg that caused a BOS/CHoCH.
-// For a bullish break → find the last bearish candle (potential demand OB).
-// For a bearish break → find the last bullish candle (potential supply OB).
+var float lb_h = na
+var float lb_l = na
+var int   lb_i = na
+var float ls_h = na
+var float ls_l = na
+var int   ls_i = na
 
-// Track last bearish candle (→ potential bullish OB)
-var float lb_h = na, var float lb_l = na, var int lb_i = na
-// Track last bullish candle (→ potential bearish OB)
-var float ls_h = na, var float ls_l = na, var int ls_i = na
+if close < open
+    lb_h := high
+    lb_l := low
+    lb_i := bar_index
 
-if close < open                         // bearish bar
-    lb_h := high;  lb_l := low;  lb_i := bar_index
-if close > open                         // bullish bar
-    ls_h := high;  ls_l := low;  ls_i := bar_index
+if close > open
+    ls_h := high
+    ls_l := low
+    ls_i := bar_index
 
-// Draw Extreme OB on bullish break
 if i_ext_ob and (bos_bull or choch_bull) and not na(lb_i)
     box.new(lb_i, lb_h, lb_i + i_ob_ext, lb_l,
          border_color=C_ext_bb, bgcolor=C_ext_bf, border_width=1)
     label.new(lb_i, lb_h, "EXT OB+", style=label.style_label_down, size=size.tiny,
          color=color.new(#1565C0, 80), textcolor=#82B1FF)
 
-// Draw Extreme OB on bearish break
 if i_ext_ob and (bos_bear or choch_bear) and not na(ls_i)
     box.new(ls_i, ls_h, ls_i + i_ob_ext, ls_l,
          border_color=C_ext_sb, bgcolor=C_ext_sf, border_width=1)
@@ -218,20 +198,21 @@ if i_ext_ob and (bos_bear or choch_bear) and not na(ls_i)
          color=color.new(#B71C1C, 80), textcolor=#FF8A80)
 
 // ── Decisional OBs ────────────────────────────────────────────────────────────
-// First pullback pivot after a BOS = Decisional OB (D2S demand / S2D supply)
 var bool wait_dec_bull = false
 var bool wait_dec_bear = false
 
 if bos_bull or choch_bull
     wait_dec_bull := true
     wait_dec_bear := false
+
 if bos_bear or choch_bear
     wait_dec_bear := true
     wait_dec_bull := false
 
-// First HL pivot after bullish BOS → Decisional Demand OB
 if i_dec_ob and wait_dec_bull and not na(_pl)
-    d_h = high[i_swing];  d_l = low[i_swing];  d_i = bar_index - i_swing
+    d_h = high[i_swing]
+    d_l = low[i_swing]
+    d_i = bar_index - i_swing
     box.new(d_i, d_h, d_i + i_ob_ext, d_l,
          border_color=C_dec_bb, bgcolor=C_dec_bf,
          border_width=1, border_style=line.style_dashed)
@@ -239,9 +220,10 @@ if i_dec_ob and wait_dec_bull and not na(_pl)
          color=color.new(#0277BD, 80), textcolor=#80D8FF)
     wait_dec_bull := false
 
-// First LH pivot after bearish BOS → Decisional Supply OB
 if i_dec_ob and wait_dec_bear and not na(_ph)
-    d_h = high[i_swing];  d_l = low[i_swing];  d_i = bar_index - i_swing
+    d_h = high[i_swing]
+    d_l = low[i_swing]
+    d_i = bar_index - i_swing
     box.new(d_i, d_h, d_i + i_ob_ext, d_l,
          border_color=C_dec_sb, bgcolor=C_dec_sf,
          border_width=1, border_style=line.style_dashed)
@@ -250,30 +232,27 @@ if i_dec_ob and wait_dec_bear and not na(_ph)
     wait_dec_bear := false
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ██  HTF POI  (Higher-Timeframe Order Blocks as Points of Interest)
+// ██  HTF POI
 // ══════════════════════════════════════════════════════════════════════════════
-htf_h  = request.security(syminfo.tickerid, i_htf, high,  lookahead=barmerge.lookahead_off)
-htf_l  = request.security(syminfo.tickerid, i_htf, low,   lookahead=barmerge.lookahead_off)
-htf_o  = request.security(syminfo.tickerid, i_htf, open,  lookahead=barmerge.lookahead_off)
-htf_c  = request.security(syminfo.tickerid, i_htf, close, lookahead=barmerge.lookahead_off)
-htf_chg= request.security(syminfo.tickerid, i_htf, ta.change(time) != 0,
-         lookahead=barmerge.lookahead_off)
+htf_h   = request.security(syminfo.tickerid, i_htf, high,  lookahead=barmerge.lookahead_off)
+htf_l   = request.security(syminfo.tickerid, i_htf, low,   lookahead=barmerge.lookahead_off)
+htf_o   = request.security(syminfo.tickerid, i_htf, open,  lookahead=barmerge.lookahead_off)
+htf_c   = request.security(syminfo.tickerid, i_htf, close, lookahead=barmerge.lookahead_off)
+htf_chg = request.security(syminfo.tickerid, i_htf, ta.change(time) != 0,
+     lookahead=barmerge.lookahead_off)
 
-// HTF pivot detection (5-bar swing on HTF)
 htf_ph_raw = request.security(syminfo.tickerid, i_htf,
      ta.pivothigh(high, 5, 5), lookahead=barmerge.lookahead_off)
 htf_pl_raw = request.security(syminfo.tickerid, i_htf,
-     ta.pivotlow(low, 5, 5),  lookahead=barmerge.lookahead_off)
+     ta.pivotlow(low, 5, 5),   lookahead=barmerge.lookahead_off)
 
 var bool htf_poi_s_drawn = false
 var bool htf_poi_b_drawn = false
 
-// Reset on new HTF candle
 if htf_chg
     htf_poi_s_drawn := false
     htf_poi_b_drawn := false
 
-// Bearish HTF OB (supply POI): bearish HTF candle at a swing high
 if i_poi and not na(htf_ph_raw) and htf_c < htf_o and not htf_poi_s_drawn
     line.new(bar_index, htf_h, bar_index + 100, htf_h,
          color=color.new(C_bos_s, 10), style=line.style_solid, width=2)
@@ -284,7 +263,6 @@ if i_poi and not na(htf_ph_raw) and htf_c < htf_o and not htf_poi_s_drawn
          color=color.new(C_bos_s, 80), textcolor=C_bos_s)
     htf_poi_s_drawn := true
 
-// Bullish HTF OB (demand POI): bullish HTF candle at a swing low
 if i_poi and not na(htf_pl_raw) and htf_c > htf_o and not htf_poi_b_drawn
     line.new(bar_index, htf_l, bar_index + 100, htf_l,
          color=color.new(C_bos_b, 10), style=line.style_solid, width=2)
@@ -296,11 +274,8 @@ if i_poi and not na(htf_pl_raw) and htf_c > htf_o and not htf_poi_b_drawn
     htf_poi_b_drawn := true
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ██  FVG  (Fair Value Gap / Imbalance)
+// ██  FVG
 // ══════════════════════════════════════════════════════════════════════════════
-// Bullish FVG: current low > high 2 bars ago  → gap = untested zone above
-// Bearish FVG: current high < low 2 bars ago  → gap = untested zone below
-
 bull_fvg = low  > high[2]
 bear_fvg = high < low[2]
 
@@ -319,11 +294,8 @@ if i_fvg and bear_fvg
          color=color.new(#D84315, 80), textcolor=#FF8A65)
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ██  EQUAL HIGHS / EQUAL LOWS  (EQH / EQL)
+// ██  EQH / EQL
 // ══════════════════════════════════════════════════════════════════════════════
-// Two consecutive pivot highs within threshold % = EQH → resting liquidity above.
-// Two consecutive pivot lows  within threshold % = EQL → resting liquidity below.
-
 if i_eqhl and not na(_ph) and not na(sh2)
     tol = sh2 * i_eq_pct / 100.0
     if math.abs(_ph - sh2) <= tol
@@ -343,18 +315,11 @@ if i_eqhl and not na(_pl) and not na(sl2)
              color=color.new(#FFC400, 85), textcolor=#FFC400)
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ██  INDUCEMENT  (IDM)
+// ██  IDM
 // ══════════════════════════════════════════════════════════════════════════════
-// IDM: price wicks beyond a structural swing, then closes BACK inside on same bar.
-// This is the "liquidity raid" that traps breakout traders before real move.
-//
-// IDM Bear: high > last swing high AND close < that high (wick sweep only)
-// IDM Bull: low  < last swing low  AND close > that low  (wick sweep only)
-
 idm_bear_raw = i_idm and not na(sh1) and high > sh1 and close < sh1
 idm_bull_raw = i_idm and not na(sl1) and low  < sl1 and close > sl1
 
-// De-duplicate (fire once per sweep event)
 var bool idm_bear_prev = false
 var bool idm_bull_prev = false
 
@@ -364,16 +329,18 @@ idm_bull = idm_bull_raw and not idm_bull_prev
 idm_bear_prev := idm_bear_raw
 idm_bull_prev := idm_bull_raw
 
-// Track IDM state for SMT and ENG LQD context
-var bool idm_b_active = false   // bullish IDM (swept a low, now bullish setup)
-var bool idm_s_active = false   // bearish IDM (swept a high, now bearish setup)
-var int  idm_b_bar    = na
-var int  idm_s_bar    = na
+var bool  idm_b_active = false
+var bool  idm_s_active = false
+var int   idm_b_bar    = na
+var int   idm_s_bar    = na
+var float idm_s_level  = na
+var float idm_b_level  = na
 
 if idm_bear
     idm_s_active := true
     idm_b_active := false
     idm_s_bar    := bar_index
+    idm_s_level  := sh1
     label.new(bar_index, high, "IDM ▼",
          style=label.style_label_down, size=size.small,
          color=color.new(C_idm, 70), textcolor=C_idm)
@@ -384,6 +351,7 @@ if idm_bull
     idm_b_active := true
     idm_s_active := false
     idm_b_bar    := bar_index
+    idm_b_level  := sl1
     label.new(bar_index, low, "IDM ▲",
          style=label.style_label_up, size=size.small,
          color=color.new(C_idm, 70), textcolor=C_idm)
@@ -391,32 +359,11 @@ if idm_bull
          color=C_idm, style=line.style_dotted, width=2)
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ██  SMART MONEY TRAPS  (SMT)
+// ██  SMT
 // ══════════════════════════════════════════════════════════════════════════════
-// SMT: an OB that forms AFTER an IDM but is on the WRONG side of true intent.
-// It creates a small move in the opposite direction (the "trap"), then fails.
-//
-// SMT Bear: after a bearish IDM (sweep of swing high), a new swing high forms
-//           but BELOW the swept level → this is a false supply OB (the trap).
-//           After it mitigates → follow order flow DOWN.
-//
-// SMT Bull: after a bullish IDM (sweep of swing low), a new swing low forms
-//           but ABOVE the swept level → false demand OB (the trap).
-//           After it mitigates → follow order flow UP.
-
-var float idm_s_level = na   // the high that was swept (bearish IDM level)
-var float idm_b_level = na   // the low  that was swept (bullish IDM level)
-
-if idm_bear
-    idm_s_level := sh1
-if idm_bull
-    idm_b_level := sl1
-
-// SMT Bear: after bearish IDM, new PH < swept level → trap
 smt_bear = i_smt and idm_s_active and not na(_ph) and not na(idm_s_level) and
      _ph < idm_s_level and (bar_index - idm_s_bar) <= 30
 
-// SMT Bull: after bullish IDM, new PL > swept level → trap
 smt_bull = i_smt and idm_b_active and not na(_pl) and not na(idm_b_level) and
      _pl > idm_b_level and (bar_index - idm_b_bar) <= 30
 
@@ -424,7 +371,6 @@ if smt_bear
     label.new(bar_index - i_swing, high[i_swing], "SMT ▼  ⚠",
          style=label.style_label_down, size=size.small,
          color=color.new(C_smt, 65), textcolor=C_smt)
-    // Draw the SMT OB zone (the trap zone)
     box.new(bar_index - i_swing, high[i_swing], bar_index - i_swing + i_ob_ext, low[i_swing],
          border_color=C_smt, bgcolor=color.new(C_smt, 88),
          border_width=1, border_style=line.style_dashed)
@@ -440,25 +386,15 @@ if smt_bull
     idm_b_active := false
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ██  ENGINEERED LIQUIDITY  (ENG LQD)
+// ██  ENG LQD
 // ══════════════════════════════════════════════════════════════════════════════
-// ENG LQD = The "Wall" — the first internal liquidity point that:
-//   1. Appears RANDOMLY after a massive impulse / FVG
-//   2. Does NOT mitigate any OB to the left
-//   3. Must be collected (hit) before price can renew to external targets
-//
-// Detection: A large impulse candle (>= i_eng_m × avg body) that simultaneously
-// creates an FVG — this gap zone IS the ENG LQD wall.
-
 candle_body = math.abs(close - open)
 avg_body    = ta.sma(math.abs(close[1] - open[1]), 20)
 is_impulse  = candle_body >= avg_body * i_eng_m
-
-eng_bull = i_eng and bull_fvg and is_impulse    // large bullish impulse with FVG above
-eng_bear = i_eng and bear_fvg and is_impulse    // large bearish impulse with FVG below
+eng_bull    = i_eng and bull_fvg and is_impulse
+eng_bear    = i_eng and bear_fvg and is_impulse
 
 if eng_bull
-    // The ENG LQD zone is the FVG gap (gap between high[2] and low of current)
     box.new(bar_index - 2, low, bar_index + 50, high[2],
          border_color=C_eng, bgcolor=C_eng_fill,
          border_width=2, border_style=line.style_dotted)
@@ -477,57 +413,47 @@ if eng_bear
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  SESSIONS
 // ══════════════════════════════════════════════════════════════════════════════
-// UTC hour-based session detection
-h_utc   = hour(time, "UTC")
-m_utc   = minute(time, "UTC")
-h_mins  = h_utc * 60 + m_utc   // minutes since midnight UTC
+h_utc  = hour(time, "UTC")
+m_utc  = minute(time, "UTC")
+h_mins = h_utc * 60 + m_utc
 
-// Session windows (UTC)
-// Asia:         20:00 – 02:00 UTC  (overnight)
-// London:       07:00 – 16:00 UTC
-// NY Kill Zone: 13:30 – 15:00 UTC  (8:30–10:00 EST)
 in_asia   = h_mins >= 1200 or h_mins < 120
 in_london = h_mins >= 420  and h_mins < 960
 in_ny_kz  = h_mins >= 810  and h_mins < 900
 
-// Background shading for each session
 bgcolor(i_asia   and in_asia   ? C_asia_bg : na, title="Asia Session")
 bgcolor(i_london and in_london ? C_lon_bg  : na, title="London Session")
 bgcolor(i_ny_kz  and in_ny_kz  ? C_ny_bg  : na, title="NY Kill Zone")
 
-// ── Asia High / Low / Midline tracking ───────────────────────────────────────
 var float a_high     = na
 var float a_low      = na
 var bool  track_asia = false
 var int   a_s_bar    = na
 
-if in_asia and not in_asia[1]           // Asia session opening bar
+if in_asia and not in_asia[1]
     a_high     := high
     a_low      := low
     track_asia := true
     a_s_bar    := bar_index
 
-if track_asia and in_asia               // during Asia: track range
+if track_asia and in_asia
     a_high := math.max(a_high, high)
     a_low  := math.min(a_low,  low)
 
-if not in_asia and in_asia[1] and track_asia    // Asia session close
+if not in_asia and in_asia[1] and track_asia
     track_asia := false
     if i_asia_hl and i_asia
         a_mid = (a_high + a_low) * 0.5
-        // Asia High
         line.new(a_s_bar, a_high, bar_index + 80, a_high,
              color=color.new(#7986CB, 0), style=line.style_dashed, width=1)
         label.new(bar_index + 3, a_high, "ASIA H",
              style=label.style_label_left, size=size.tiny,
              color=color.new(#3949AB, 85), textcolor=#9FA8DA)
-        // Asia Low
         line.new(a_s_bar, a_low, bar_index + 80, a_low,
              color=color.new(#7986CB, 0), style=line.style_dashed, width=1)
         label.new(bar_index + 3, a_low, "ASIA L",
              style=label.style_label_left, size=size.tiny,
              color=color.new(#3949AB, 85), textcolor=#9FA8DA)
-        // Asia Midline
         line.new(a_s_bar, a_mid, bar_index + 80, a_mid,
              color=color.new(#7986CB, 50), style=line.style_dotted, width=1)
         label.new(bar_index + 3, a_mid, "ASIA MID",
@@ -537,23 +463,24 @@ if not in_asia and in_asia[1] and track_asia    // Asia session close
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  ENTRY SIGNALS
 // ══════════════════════════════════════════════════════════════════════════════
-// DreamsFX Entry Criteria (Refined Limit Order model):
-//
-// BUY SIGNAL  (bullish bias):
-//   • bull_ms = true (market structure is bullish)
-//   • IDM ▲ occurred (a swing low was swept → retail sellers trapped)
-//   • Price is back inside or approaching the last Extreme OB zone (demand)
-//   • A bullish FVG is present (imbalance = OB validation)
-//
-// SELL SIGNAL (bearish bias):
-//   • bull_ms = false
-//   • IDM ▼ occurred (a swing high was swept → retail buyers trapped)
-//   • Price is inside/approaching last Extreme OB zone (supply)
-//   • A bearish FVG is present
+var float lb_h2 = na
+var float lb_l2 = na
+var float ls_h2 = na
+var float ls_l2 = na
 
-// Simplified proximity check: is current close near the OB range?
-near_bull_ob = not na(lb_l) and not na(lb_h) and close >= lb_l and close <= lb_h * 1.002
-near_bear_ob = not na(ls_l) and not na(ls_h) and close <= ls_h and close >= ls_l * 0.998
+if (bos_bull or choch_bull) and not na(lb_i)
+    lb_h2 := lb_h
+    lb_l2 := lb_l
+
+if (bos_bear or choch_bear) and not na(ls_i)
+    ls_h2 := ls_h
+    ls_l2 := ls_l
+
+near_bull_ob = not na(lb_l2) and not na(lb_h2) and
+     close >= lb_l2 and close <= lb_h2 * 1.002
+
+near_bear_ob = not na(ls_l2) and not na(ls_h2) and
+     close <= ls_h2 and close >= ls_l2 * 0.998
 
 buy_signal  = i_entry and bull_ms and idm_b_active and bull_fvg and near_bull_ob
 sell_signal = i_entry and not bull_ms and idm_s_active and bear_fvg and near_bear_ob
@@ -565,7 +492,7 @@ if buy_signal
     label.new(bar_index, low, "🟢 BUY\nIDM + OB + FVG",
          style=label.style_label_up, size=size.small,
          color=color.new(C_buy, 55), textcolor=color.white)
-    idm_b_active := false   // reset — one signal per IDM event
+    idm_b_active := false
 
 if sell_signal
     label.new(bar_index, high, "🔴 SELL\nIDM + OB + FVG",
@@ -577,15 +504,15 @@ if sell_signal
 // ██  DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════════
 var table db = table.new(position.top_right, 2, 10,
-     bgcolor  = color.new(color.black, 72),
-     border_color = color.new(color.white, 65),
-     border_width = 1,
-     frame_color  = color.new(color.white, 50),
-     frame_width  = 1)
+     bgcolor=color.new(color.black, 72),
+     border_color=color.new(color.white, 65),
+     border_width=1,
+     frame_color=color.new(color.white, 50),
+     frame_width=1)
 
-// Session label string
-sess_str = in_ny_kz ? "🗽 NY Kill Zone" : in_london and in_ny_kz ? "🌍+🗽" :
-     in_london ? "🌍 London" : in_asia ? "🌙 Asia" : "⏸ Off-Hours"
+sess_str = in_ny_kz  ? "🗽 NY Kill Zone" :
+     in_london       ? "🌍 London"       :
+     in_asia         ? "🌙 Asia"         : "⏸ Off-Hours"
 
 a_mid_val = not na(a_high) and not na(a_low) ? (a_high + a_low) * 0.5 : na
 
@@ -593,72 +520,57 @@ idm_str = idm_s_active ? "BEAR IDM Active" : idm_b_active ? "BULL IDM Active" : 
 idm_col = idm_s_active ? C_bos_s : idm_b_active ? C_bos_b : color.gray
 
 if barstate.islast
-    // Header
     table.cell(db, 0, 0, "DreamsFX MSI",
          bgcolor=color.new(#1A237E, 45), text_color=color.white,
          text_size=size.small, text_halign=text.align_center)
-    table.cell(db, 1, 0, "Pine v5",
+    table.cell(db, 1, 0, "Pine v6",
          bgcolor=color.new(#1A237E, 45), text_color=color.new(color.white, 40),
          text_size=size.small, text_halign=text.align_center)
-
-    // Row 1: Trend
     table.cell(db, 0, 1, "Trend",
          text_color=color.new(color.white, 30), text_size=size.tiny)
     table.cell(db, 1, 1, bull_ms ? "BULLISH  ▲" : "BEARISH  ▼",
          text_color=bull_ms ? C_bos_b : C_bos_s, text_size=size.tiny)
-
-    // Row 2: Session
     table.cell(db, 0, 2, "Session",
          text_color=color.new(color.white, 30), text_size=size.tiny)
     table.cell(db, 1, 2, sess_str,
          text_color=color.white, text_size=size.tiny)
-
-    // Row 3: Asia High
     table.cell(db, 0, 3, "Asia High",
          text_color=color.new(color.white, 30), text_size=size.tiny)
     table.cell(db, 1, 3,
          not na(a_high) ? str.tostring(a_high, format.mintick) : "—",
          text_color=#9FA8DA, text_size=size.tiny)
-
-    // Row 4: Asia Low
     table.cell(db, 0, 4, "Asia Low",
          text_color=color.new(color.white, 30), text_size=size.tiny)
     table.cell(db, 1, 4,
          not na(a_low) ? str.tostring(a_low, format.mintick) : "—",
          text_color=#9FA8DA, text_size=size.tiny)
-
-    // Row 5: Asia Mid
     table.cell(db, 0, 5, "Asia Mid",
          text_color=color.new(color.white, 30), text_size=size.tiny)
     table.cell(db, 1, 5,
          not na(a_mid_val) ? str.tostring(a_mid_val, format.mintick) : "—",
          text_color=#9FA8DA, text_size=size.tiny)
-
-    // Row 6: Last Swing High
     table.cell(db, 0, 6, "Swing High",
          text_color=color.new(color.white, 30), text_size=size.tiny)
     table.cell(db, 1, 6,
          not na(sh1) ? str.tostring(sh1, format.mintick) : "—",
          text_color=#FF8A80, text_size=size.tiny)
-
-    // Row 7: Last Swing Low
     table.cell(db, 0, 7, "Swing Low",
          text_color=color.new(color.white, 30), text_size=size.tiny)
     table.cell(db, 1, 7,
          not na(sl1) ? str.tostring(sl1, format.mintick) : "—",
          text_color=#80CBC4, text_size=size.tiny)
-
-    // Row 8: IDM Status
     table.cell(db, 0, 8, "IDM",
          text_color=color.new(color.white, 30), text_size=size.tiny)
-    table.cell(db, 1, 8, idm_str, text_color=idm_col, text_size=size.tiny)
-
-    // Row 9: Signal
-    sig_str = buy_signal ? "🟢 BUY SIGNAL" : sell_signal ? "🔴 SELL SIGNAL" : "Watching..."
-    sig_col = buy_signal ? C_buy : sell_signal ? C_sell : color.gray
+    table.cell(db, 1, 8, idm_str,
+         text_color=idm_col, text_size=size.tiny)
+    sig_str = buy_signal  ? "🟢 BUY SIGNAL"  :
+         sell_signal      ? "🔴 SELL SIGNAL" : "Watching..."
+    sig_col = buy_signal  ? C_buy  :
+         sell_signal      ? C_sell : color.gray
     table.cell(db, 0, 9, "Signal",
          text_color=color.new(color.white, 30), text_size=size.tiny)
-    table.cell(db, 1, 9, sig_str, text_color=sig_col, text_size=size.tiny)
+    table.cell(db, 1, 9, sig_str,
+         text_color=sig_col, text_size=size.tiny)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ██  ALERT CONDITIONS
@@ -669,8 +581,8 @@ alertcondition(choch_bull, "CHoCH Bullish",     "DFX: CHoCH ▲ — structure re
 alertcondition(choch_bear, "CHoCH Bearish",     "DFX: CHoCH ▼ — structure reversed to bearish")
 alertcondition(idm_bull,   "IDM Sweep Low",     "DFX: IDM ▲ — swing low swept (bullish IDM)")
 alertcondition(idm_bear,   "IDM Sweep High",    "DFX: IDM ▼ — swing high swept (bearish IDM)")
-alertcondition(smt_bull,   "SMT Bull Trap",     "DFX: SMT ▲ — bull trap detected, follow order flow UP")
-alertcondition(smt_bear,   "SMT Bear Trap",     "DFX: SMT ▼ — bear trap detected, follow order flow DOWN")
+alertcondition(smt_bull,   "SMT Bull Trap",     "DFX: SMT ▲ — bull trap detected")
+alertcondition(smt_bear,   "SMT Bear Trap",     "DFX: SMT ▼ — bear trap detected")
 alertcondition(eng_bull,   "ENG LQD Bull Wall", "DFX: ⚡ Engineered Liquidity WALL (bullish FVG)")
 alertcondition(eng_bear,   "ENG LQD Bear Wall", "DFX: ⚡ Engineered Liquidity WALL (bearish FVG)")
 alertcondition(buy_signal, "BUY Signal",        "DFX: 🟢 BUY — IDM + Extreme OB + FVG aligned")
