@@ -27,3 +27,16 @@ bundles several skills, all copied in as-is:
 
 Source: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill (MIT
 licensed — see `LICENSE`).
+
+#### Plugin manifest
+
+This repo also carries the plugin's original `.claude-plugin/plugin.json`
+and `.claude-plugin/marketplace.json`, copied over unmodified (the `source`
+and `skills` paths in them are relative and already resolve correctly
+against this repo's layout). In an environment where `/plugin` is
+supported, this repo can be used as a marketplace directly:
+
+```
+/plugin marketplace add businessgraphics2025-cmyk/my-skills
+/plugin install ui-ux-pro-max@ui-ux-pro-max-skill
+```
