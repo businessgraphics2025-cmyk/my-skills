@@ -1,6 +1,6 @@
 ---
 name: gemini-mcp-connection
-description: Guides connecting Claude Code to Google's Gemini via MCP (Model Context Protocol) — installing a bridge MCP server so Claude can call out to Gemini models, and/or configuring Gemini CLI's own mcpServers so it can consume MCP tools. Use this whenever the user mentions "Gemini MCP", "connect Gemini", "gemini mcp add", wants Claude and Gemini to collaborate or cross-check each other, asks how to give Claude Code access to Gemini, or hits errors setting up a Gemini-related MCP server (missing GEMINI_API_KEY, "gemini command not found", MCP server not showing up in `claude mcp list`). Trigger even if the user just says "Gemini" plus "MCP" without more detail — walk them through the setup rather than assuming they already know the mechanics.
+description: Guides connecting Claude Code to Google's Gemini via MCP (Model Context Protocol) — installing a bridge MCP server so Claude can call out to Gemini models for text collaboration or for image generation/editing (Gemini's "Nano Banana" image models), and/or configuring Gemini CLI's own mcpServers so it can consume MCP tools. Use this whenever the user mentions "Gemini MCP", "connect Gemini", "gemini mcp add", wants Claude and Gemini to collaborate or cross-check each other, asks how to give Claude Code access to Gemini, wants Claude to be able to generate or edit images via Gemini/Nano Banana, or hits errors setting up a Gemini-related MCP server (missing GEMINI_API_KEY, "gemini command not found", MCP server not showing up in `claude mcp list`). Trigger even if the user just says "Gemini" plus "MCP", or "Gemini" plus "images", without more detail — walk them through the setup rather than assuming they already know the mechanics.
 ---
 
 # Connecting Claude Code to Gemini via MCP
@@ -60,6 +60,36 @@ claude mcp add gemini-cli -s user -- /absolute/path/to/.venv/bin/python /absolut
 
 Use absolute paths for both the interpreter and the script — Claude Code launches the server from an
 arbitrary working directory, so relative paths silently fail to resolve.
+
+### Option 3 — Image generation and editing (`gemini-image-mcp`, "Nano Banana")
+
+The two bridges above are for *text* collaboration — asking Gemini questions, code review, second
+opinions. They do not generate images. Neither does Gemini CLI itself. For image generation/editing, use
+a bridge built specifically around Gemini's image models (Google's "Nano Banana" family —
+`gemini-2.5-flash-image`, `gemini-3.1-flash-image`, `gemini-3-pro-image`):
+
+```bash
+claude mcp add gemini-image -- npx -y @jimothy-snicket/gemini-image-mcp
+```
+
+Also needs `GEMINI_API_KEY` in the environment (same key as Option 1, from
+[Google AI Studio](https://aistudio.google.com/apikey) — set it in the shell profile, not passed inline
+here, since this command has no `env` wrapper). Once connected it typically exposes:
+
+- **`generate_image`** — text-to-image, image editing from a reference image plus an instruction,
+  multi-turn edit sessions, optional one-call background removal. This is the one that costs API credits.
+- **`process_image`** — local, free image manipulation (crop, resize, format conversion, non-AI
+  background removal) that doesn't call the API at all.
+
+Ask Claude something like *"generate an image of X with Gemini"* or *"use Gemini to remove the background
+from this image"* once it's connected — no special syntax needed, same as the text bridges. If the user
+wants higher quality/resolution over lower cost, mention they can request the `gemini-3-pro-image` model
+by name; `gemini-2.5-flash-image` is the cheaper default.
+
+Other image-focused bridges exist (`nano-banana-pro-mcp`, `guinacio/claude-image-gen`, `shinpr/mcp-image`
+— the last also supports OpenAI and BytePlus image models through one server) — worth mentioning as
+alternatives, particularly `mcp-image` if the user wants to compare Gemini's output against another
+provider's from the same server.
 
 ### Verify the connection
 

@@ -26,6 +26,26 @@ Other bridges surfaced by a search (`cmdaltctr/claude-gemini-mcp-slim`,
 key-or-local-CLI pattern — worth mentioning as alternatives if neither default fits, but don't recommend
 one you haven't actually read the setup for.
 
+## Image generation bridges ("Nano Banana")
+
+These are a separate category from the text bridges above — none of the text bridges generate images, and
+neither does Gemini CLI itself. All wrap Gemini's image models (marketed as "Nano Banana" /
+"Nano Banana Pro" — the underlying model IDs are `gemini-2.5-flash-image`, `gemini-3.1-flash-image`, and
+`gemini-3-pro-image`) and need the same `GEMINI_API_KEY` as Option 1's text bridge.
+
+| | `@jimothy-snicket/gemini-image-mcp` | `shinpr/mcp-image` | `mrafaeldie12/nano-banana-pro-mcp` |
+|---|---|---|---|
+| Scope | Gemini image models only, plus free local image processing (crop/resize/format) | Gemini, OpenAI, and BytePlus Seedream image models through one server | Focused specifically on the newer "Nano Banana Pro" (`gemini-3-pro-image-preview`) model |
+| Good fit when | The user only wants Gemini and likes having free local-processing tools alongside it | The user wants to compare or switch between providers without juggling multiple MCP servers | The user specifically wants the higher-end Pro image model and nothing else |
+
+A generated image is returned as a saved file path rather than streamed as raw image data through Claude's
+context — this keeps a single generation call cheap in tokens even though the image itself is large.
+
+Preview model IDs (`gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`) are being phased out in
+favor of general-availability IDs without the `-preview` suffix — if a bridge's default model 404s or
+warns about deprecation, that's usually why; point the user at the bridge's own model-name setting rather
+than assuming the whole bridge is broken.
+
 ## Gemini CLI's own `mcpServers` schema (Direction B)
 
 Full shape of one entry in `~/.gemini/settings.json` or `.gemini/settings.json`:
