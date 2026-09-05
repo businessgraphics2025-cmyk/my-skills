@@ -107,9 +107,14 @@ installed — check `/mcp` for the exact tool names).
 
 ### Troubleshooting
 
-- **Server shows "failed" in `claude mcp list`** — run the launch command by hand in a terminal (strip
-  the `claude mcp add` wrapper, just run what comes after `--`) and read the actual error; a bad
-  `GEMINI_API_KEY` or a missing `npx`/`node` install are the two most common causes.
+- **Server shows "failed"/"CONNECTION_CLOSED" in `claude mcp list`** — run the launch command by hand in
+  a terminal (strip the `claude mcp add` wrapper, just run what comes after `--`) and read the actual
+  error; a bad `GEMINI_API_KEY` or a missing `npx`/`node` install are the two most common causes.
+  Confirmed directly against `@jimothy-snicket/gemini-image-mcp`: with no key set at all, it doesn't start
+  degraded and fail on the first tool call — it logs `GEMINI_API_KEY environment variable is not set` and
+  exits immediately, which is why `claude mcp list` reports it as connection-closed rather than as a
+  clearer auth error. If a user reports exactly that generic failure, missing/empty `GEMINI_API_KEY` is
+  the first thing to check, before assuming anything about `npx` or network access.
 - **"gemini: command not found"** during setup of Option 2 — `npm install -g @google/gemini-cli` first,
   then confirm with `gemini --version`.
 - **Tool calls time out or return auth errors** — for Option 2, run `gemini` interactively once first to
